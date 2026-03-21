@@ -1,6 +1,12 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
+import sqlite3
+
+connexion = sqlite3.connect("crypto.db")
+
+df = pd.read_sql_query("SELECT * FROM cryptos", connexion)
+connexion.close()
 
 # ── CONFIG ──
 st.set_page_config(page_title="Crypto Dashboard", layout="wide")
@@ -75,25 +81,15 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# ── DONNÉES ──
-data = [
-    {"name": "Bitcoin",  "symbol": "BTC", "prix": 58000, "variation_24h": 2.5},
-    {"name": "Ethereum", "symbol": "ETH", "prix": 3100,  "variation_24h": -1.2},
-    {"name": "Solana",   "symbol": "SOL", "prix": 140,   "variation_24h": 4.1},
-    {"name": "BNB",      "symbol": "BNB", "prix": 520,   "variation_24h": 0.8},
-    {"name": "XRP",      "symbol": "XRP", "prix": 0.52,  "variation_24h": -0.3},
-]
-
-df = pd.DataFrame(data)
 
 # ── KPI CARDS ──
 col1, col2, col3, col4, col5 = st.columns(5)
 colonnes = [col1, col2, col3, col4, col5]
 
 # zip() associe chaque colonne à une crypto en parallèle
-for col, crypto in zip(colonnes, data):
+for col, crypto in zip(colonnes, df.to_dict("records")):
     # Si variation positive → vert, sinon → rouge
-    if crypto["variation_24h"] >= 0:
+    if crypto["variation"] >= 0:
         classe = "card-variation-pos"
         signe  = "▲"
     else:
@@ -104,7 +100,7 @@ for col, crypto in zip(colonnes, data):
     <div class="card">
         <div class="card-name">{crypto["symbol"]}</div>
         <div class="card-prix">{crypto["prix"]:,} €</div>
-        <div class="{classe}">{signe} {crypto["variation_24h"]}%</div>
+        <div class="{classe}">{signe} {crypto["variation"]}%</div>
     </div>
     """, unsafe_allow_html=True)
 
@@ -131,9 +127,9 @@ with gauche:
 
 with droite:
     fig2 = px.bar(
-        df, x="name", y="variation_24h",
+        df, x="name", y="variation",
         title="Variation 24h (%)",
-        color="variation_24h",
+        color="variation",
         color_continuous_scale=["#FF4B6E", "gray", "#00C896"],
     )
     fig2.update_layout(
