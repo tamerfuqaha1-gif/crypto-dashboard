@@ -3,7 +3,31 @@ import pandas as pd
 import plotly.express as px
 import sqlite3
 
+# ── BASE DE DONNÉES ──
+# On crée la base automatiquement si elle n'existe pas
 connexion = sqlite3.connect("crypto.db")
+curseur = connexion.cursor()
+
+curseur.execute("""
+    CREATE TABLE IF NOT EXISTS cryptos (
+        id       INTEGER PRIMARY KEY,
+        name     TEXT,
+        symbol   TEXT,
+        prix     REAL,
+        variation REAL
+    )
+""")
+
+cryptos = [
+    (1, "Bitcoin",  "BTC", 58000, 2.5),
+    (2, "Ethereum", "ETH", 3100,  -1.2),
+    (3, "Solana",   "SOL", 140,   4.1),
+    (4, "BNB",      "BNB", 520,   0.8),
+    (5, "XRP",      "XRP", 0.52,  -0.3),
+]
+
+curseur.executemany("INSERT OR IGNORE INTO cryptos VALUES (?,?,?,?,?)", cryptos)
+connexion.commit()
 
 df = pd.read_sql_query("SELECT * FROM cryptos", connexion)
 connexion.close()
@@ -81,14 +105,11 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-
 # ── KPI CARDS ──
 col1, col2, col3, col4, col5 = st.columns(5)
 colonnes = [col1, col2, col3, col4, col5]
 
-# zip() associe chaque colonne à une crypto en parallèle
 for col, crypto in zip(colonnes, df.to_dict("records")):
-    # Si variation positive → vert, sinon → rouge
     if crypto["variation"] >= 0:
         classe = "card-variation-pos"
         signe  = "▲"
@@ -107,7 +128,6 @@ for col, crypto in zip(colonnes, df.to_dict("records")):
 # ── GRAPHIQUES ──
 st.subheader("📊 Visualisations")
 
-# Ligne 1 : deux graphiques côte à côte
 gauche, droite = st.columns(2)
 
 with gauche:
@@ -139,7 +159,6 @@ with droite:
     )
     st.plotly_chart(fig2, use_container_width=True)
 
-# Ligne 2 : camembert centré
 _, centre, _ = st.columns([1, 2, 1])
 with centre:
     fig3 = px.pie(
