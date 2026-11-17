@@ -1,0 +1,11 @@
+# Base de données générée automatiquement
+*.db
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# macOS
+.DS_Store
